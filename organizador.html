@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organizador Diario Didáctico</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f8ff; color: #333; }
+    h1 { text-align: center; color: #005f73; }
+    h3 { color: #0a9396; }
+    .hora { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; background: #ffffff; border-left: 5px solid #94d2bd; padding: 10px; border-radius: 5px; }
+    .hora input[type=text] { flex: 1; margin-left: 10px; padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    .bloque { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px #bbb; margin-bottom: 15px; }
+    #gastos input { margin: 5px; padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    button { background: #0a9396; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #007d86; }
+    #resumen { background: #e9f5db; padding: 15px; margin-top: 15px; border-radius: 10px; border-left: 5px solid #b5e48c; }
+  </style>
+</head>
+<body>
+  <h1>📅 Organizador de Horarios y Dinero </h1>
+
+  <p>Planifica tu día escribiendo tus actividades por hora y lleva un registro sencillo de cuánto gastas.</p>
+
+  <div id="horario"></div>
+
+  <div class="bloque" id="gastos">
+    <h3>📝 Registrar un gasto</h3>
+    <p>Escribe cuánto gastaste y en qué. Ejemplo: "10 - Pasaje"</p>
+    <input type="number" id="monto" placeholder="¿Cuánto gastaste?" />
+    <input type="text" id="motivo" placeholder="¿En qué lo gastaste?" />
+    <button onclick="agregarGasto()">➕ Agregar gasto</button>
+  </div>
+
+  <div id="resumen"></div>
+
+  <script>
+    const horarioDiv = document.getElementById('horario');
+    const resumenDiv = document.getElementById('resumen');
+    let gastos = [];
+
+    function crearHorario() {
+      for (let h = 6; h <= 22; h++) {
+        const hora = document.createElement('div');
+        hora.className = 'hora';
+        hora.innerHTML = `<strong>${h}:00 - ${h + 1}:00</strong>
+          <input type="text" placeholder="¿Qué harás en esta hora?" onchange="guardarActividades()" data-hora="${h}" />`;
+        horarioDiv.appendChild(hora);
+      }
+    }
+
+    function guardarActividades() {
+      const actividades = Array.from(document.querySelectorAll('.hora input')).map(input => ({ hora: input.dataset.hora, texto: input.value }));
+      localStorage.setItem('actividades', JSON.stringify(actividades));
+      actualizarResumen();
+    }
+
+    function cargarActividades() {
+      const datos = JSON.parse(localStorage.getItem('actividades') || '[]');
+      datos.forEach(({ hora, texto }) => {
+        const input = document.querySelector(`.hora input[data-hora="${hora}"]`);
+        if (input) input.value = texto;
+      });
+    }
+
+    function agregarGasto() {
+      const monto = parseFloat(document.getElementById('monto').value);
+      const motivo = document.getElementById('motivo').value;
+      if (!isNaN(monto) && motivo) {
+        gastos.push({ monto, motivo });
+        localStorage.setItem('gastos', JSON.stringify(gastos));
+        document.getElementById('monto').value = '';
+        document.getElementById('motivo').value = '';
+        actualizarResumen();
+      }
+    }
+
+    function cargarGastos() {
+      gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+    }
+
+    function actualizarResumen() {
+      const actividades = Array.from(document.querySelectorAll('.hora input'));
+      const horasOcupadas = actividades.filter(a => a.value.trim() !== '').length;
+      const horasLibres = actividades.length - horasOcupadas;
+
+      const totalGastado = gastos.reduce((suma, g) => suma + g.monto, 0);
+
+      resumenDiv.innerHTML = `<h3>📊 Resumen del Día</h3>
+        <ul>
+          <li>✅ Horas ocupadas: <strong>${horasOcupadas}</strong></li>
+          <li>🕒 Horas libres: <strong>${horasLibres}</strong></li>
+          <li>💰 Total gastado: <strong>S/ ${totalGastado.toFixed(2)}</strong></li>
+        </ul>`;
+    }
+
+    // Inicialización
+    crearHorario();
+    cargarActividades();
+    cargarGastos();
+    actualizarResumen();
+  </script>
+</body>
+</html>
